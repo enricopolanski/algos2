@@ -1,102 +1,109 @@
-import { fromArray, ListNode, toArray, of } from "./listnode";
+import { fromArray, toArray, of } from "./listnode";
 
 const l1 = fromArray([2, 4, 3]);
 
 const l2 = fromArray([5, 6, 4]);
 
-const add = (
-  l1: ListNode<number>,
-  l2: ListNode<number>,
-  over?: number
-): {
-  sum: number;
-  overflow: number;
-  next1: ListNode<number>["next"];
-  next2: ListNode<number>["next"];
-} => ({
-  sum: (l1.val + l2.val + (over ? over : 0)) % 10,
-  overflow: l1.val + l2.val + (over ? over : 0) > 9 ? 1 : 0,
-  next1: l1.next,
-  next2: l2.next,
-});
+class ListNode {
+  val: number;
+  next: ListNode | null;
+  constructor(val?: number, next?: ListNode | null) {
+    this.val = val === undefined ? 0 : val;
+    this.next = next === undefined ? null : next;
+  }
+}
 
-function addTwoNumber(
-  l1: ListNode<number> | null,
-  l2: ListNode<number> | null
-): ListNode<number> | null {
+function addTwoNumbers(
+  l1: ListNode | null,
+  l2: ListNode | null
+): ListNode | null {
   if (!l1) {
     return l2;
   }
   if (!l2) {
     return l1;
   }
-  let current1: ListNode<number> | null = l1;
-  let current2: ListNode<number> | null = l2;
-  let head: ListNode<number> | null = null;
-  let tail: ListNode<number> | null = null;
+  let head: ListNode | null = null;
+  let tail: ListNode | null = null;
+  let overflow = 0;
+  let x1: ListNode | null = l1;
+  let x2: ListNode | null = l2;
 
-  let remainder = 0;
-  const count = 0;
-
-  while (current1) {
-    if (current2) {
-      const { sum, overflow, next1, next2 } = add(
-        current1,
-        current2,
-        remainder
-      );
-      remainder = overflow;
-
-      if (!tail) {
+  while (x1) {
+    if (x2) {
+      const newNode = { val: (x1.val + x2.val + overflow) % 10, next: null };
+      overflow = x1.val + x2.val + overflow > 9 ? 1 : 0;
+      x1 = x1.next;
+      x2 = x2.next;
+      if (head && tail) {
+        tail.next = newNode;
+        tail = newNode;
+      } else {
         if (!head) {
-          head = of(sum);
+          head = newNode;
         } else {
-          tail = of(sum);
-          head.next = tail;
-        }
-      } else {
-        const newNode = of(sum);
-        tail.next = newNode;
-        tail = newNode;
-      }
-      current1 = next1;
-      current2 = next2;
-    } else {
-      const { sum, overflow, next1, next2 } = add(current1, of(remainder));
-      const newNode = of(sum);
-      remainder = overflow;
-      current1 = next1;
-      if (tail) {
-        tail.next = newNode;
-        tail = newNode;
-      } else {
-        if (head) {
           head.next = newNode;
-        } else {
-          head = l1;
+          tail = newNode;
         }
       }
+    } else if (overflow) {
+      const newNode = { val: (x1.val + overflow) % 10, next: null };
+      overflow = x1.val + overflow > 9 ? 1 : 0;
+      x1 = x1.next;
+      if (head && tail) {
+        tail.next = newNode;
+        tail = newNode;
+      } else {
+        if (!head) {
+          head = newNode;
+        } else {
+          head.next = newNode;
+          tail = newNode;
+        }
+      }
+    } else {
+      if (head) {
+        if (tail) {
+          tail.next = x1;
+          tail = x1;
+        } else {
+          head.next = x1;
+          tail = x1;
+        }
+      } else {
+        head = x1;
+      }
+      break;
     }
   }
-  if (current2) {
-    const { sum, overflow, next1, next2 } = add(current2, of(remainder));
-    current2 = next1;
-    remainder = overflow;
-    const newNode = of(sum);
+  while (x2) {
+    const newNode = { val: (x2.val + overflow) % 10, next: null };
+    overflow = x2.val + overflow > 9 ? 1 : 0;
+    x2 = x2.next;
     if (!tail) {
-      tail = newNode;
+      if (!head) {
+        head = newNode;
+      } else {
+        head.next = newNode;
+        tail = newNode;
+      }
     } else {
       tail.next = newNode;
       tail = newNode;
     }
   }
-  if (remainder) {
-    const newNode = of(remainder);
-    if (!tail) {
-      tail = newNode;
+  if (overflow) {
+    console.log("in overflow");
+
+    overflow = 0;
+    if (tail) {
+      tail.next = { val: 1, next: null };
     } else {
-      tail.next = newNode;
-      tail = newNode;
+      if (!head) {
+        head = { val: 1, next: null };
+      } else {
+        head.next = { val: 1, next: null };
+      }
     }
   }
   return head;
@@ -104,7 +111,7 @@ function addTwoNumber(
 
 // addTwoNumber(l1, l2); //?
 
-const l3 = fromArray([9, 9, 9, 9, 9, 9, 9]);
-const l4 = fromArray([9, 9, 9, 9]);
+const l3 = fromArray([0]);
+const l4 = fromArray([7, 3]);
 
-toArray(addTwoNumber(l3, l4)); //?
+toArray(addTwoNumbers(l3, l4)); //?
