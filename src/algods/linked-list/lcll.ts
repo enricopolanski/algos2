@@ -55,7 +55,10 @@ const get = (ll: ListNode, int: number): number => {
   return node ? getValue(node) : -1;
 };
 
-const addAtHead = (ll: ListNode, n: number): ListNode => {
+/**
+ * Adds a new value as the new head of the list.
+ */
+const addAtHeadU = (ll: ListNode | null, n: number): ListNode => {
   const newHead = of(n);
   newHead.next = ll;
   return newHead;
@@ -73,21 +76,31 @@ const getLastNode: (ll: ListNode) => ListNode = (ll) => {
 };
 
 /**
- * Appends l2 to the tail of l1. Mutates `l1`.
+ * Appends l2 to the tail of l1. Mutates `l1`. Returns the head of new list.
  */
-const addNodeToTailU: (l1: ListNode, l2: ListNode) => ListNode = (l1, l2) => {
-  getLastNode(l1).next = l2;
-  return l1;
+const addNodeToTailU: (l1: ListNode | null, l2: ListNode) => ListNode = (
+  l1,
+  l2
+) => {
+  if (l1) {
+    getLastNode(l1).next = l2;
+    return l1;
+  } else {
+    return l2;
+  }
 };
 
-const addToTailU = (l1: ListNode, n: number): ListNode =>
+const addToTailU = (l1: ListNode | null, n: number): ListNode =>
   addNodeToTailU(l1, of(n));
 
 const addNodeAtIndexU = (
-  l1: ListNode,
+  l1: ListNode | null,
   l2: ListNode,
   index: number
-): ListNode => {
+): ListNode | null => {
+  if (!l1) {
+    return null;
+  }
   const nodeBefore = getNthNode(l1, index - 1);
   if (!nodeBefore) {
     return l1;
@@ -100,10 +113,16 @@ const addNodeAtIndexU = (
   return l1;
 };
 
-const addAtIndexU = (ll: ListNode, index: number, val: number): ListNode =>
-  addNodeAtIndexU(ll, of(val), index);
+const addAtIndexU = (
+  ll: ListNode | null,
+  index: number,
+  val: number
+): ListNode | null => addNodeAtIndexU(ll, of(val), index);
 
 const deleteAtIndex = (ll: ListNode, index: number): ListNode => {
+  if (index === 0 && ll.next) {
+    return ll.next;
+  }
   const previous = getNthNode(ll, index - 1);
   if (!previous) {
     return ll;
@@ -163,7 +182,7 @@ const clone: (ll: ListNode | null) => ListNode | null = (ll) => {
   return head;
 };
 
-assert.deepStrictEqual(clone(of(1)), of(1)); //?
+assert.deepStrictEqual(clone(of(1)), of(1));
 
 const fromArray: (ns: number[]) => ListNode | null = (ns) => {
   let head: ListNode | null = null;
@@ -194,29 +213,113 @@ const toArray: (ll: ListNode | null) => number[] = (ll) => {
 assert.deepStrictEqual(fromArray([1, 2, 3, 4]), {
   val: 1,
   next: { val: 2, next: { val: 3, next: { val: 4, next: null } } },
-}); //?
-assert.deepStrictEqual(toArray(fromArray([1, 2, 3, 4])), [1, 2, 3, 4]); //?
-assert.deepStrictEqual(fromArray([]), null); //?
+});
+assert.deepStrictEqual(toArray(fromArray([1, 2, 3, 4])), [1, 2, 3, 4]);
+assert.deepStrictEqual(fromArray([]), null);
 assert.deepStrictEqual(toArray(fromArray([])), []);
-assert.deepStrictEqual(clone(fromArray([1, 2, 3])), fromArray([1, 2, 3])); //?
-// get n-th
+assert.deepStrictEqual(clone(fromArray([1, 2, 3])), fromArray([1, 2, 3]));
 assert.deepStrictEqual(
   getNthNode(fromArray([1, 2, 3, 4])!, 0),
   fromArray([1, 2, 3, 4])
-); //?
+);
 assert.deepStrictEqual(
   getNthNode(fromArray([1, 2, 3, 4])!, 1),
   fromArray([2, 3, 4])
-); //?
+);
 assert.deepStrictEqual(
   getNthNode(fromArray([1, 2, 3, 4])!, 2),
   fromArray([3, 4])
-); //?
-assert.deepStrictEqual(getNthNode(fromArray([1, 2, 3, 4])!, 3), fromArray([4])); //?
-assert.deepStrictEqual(getNthNode(fromArray([1, 2, 3, 4])!, 4), null); //?
+);
+assert.deepStrictEqual(getNthNode(fromArray([1, 2, 3, 4])!, 3), fromArray([4]));
+assert.deepStrictEqual(getNthNode(fromArray([1, 2, 3, 4])!, 4), null);
 
-// get OK
-// addAtHead
-// attAtTail
-// addAtIndex
-// deleteAtIndex
+class MyLinkedList {
+  head: ListNode | null;
+  size: number;
+
+  constructor() {
+    this.head = null;
+    this.size = 0;
+  }
+
+  getNode(index: number): ListNode | null {
+    return this.head === null ? null : getNthNode(this.head, index);
+  }
+
+  get(index: number): number {
+    return this.head === null ? -1 : get(this.head, index);
+  }
+
+  addAtHead(val: number): void {
+    this.head = addAtHeadU(this.head, val);
+    this.size++;
+  }
+
+  addAtTail(val: number): void {
+    this.head = addToTailU(this.head, val);
+    this.size++;
+  }
+
+  addAtIndex(index: number, val: number): void {
+    if (index < 0 || index > this.size) return;
+    if (index === this.size) {
+      this.addAtTail(val);
+    } else if (index === 0) {
+      this.addAtHead(val);
+    } else {
+      addAtIndexU(this.head, index, val);
+    }
+    this.size++;
+  }
+
+  deleteAtIndex(index: number): void {
+    if (index === 0) {
+      this.head = this.head?.next || null;
+      return;
+    }
+    if (index < 0 || index >= this.size) return;
+    if (this.size === 0) return;
+    if (!this.head) return;
+    deleteAtIndex(this.head, index);
+    this.size--;
+  }
+}
+
+// is palindrome
+const lln = fromArray([1, 2, 3, 4]);
+const lly = fromArray([1, 2, 3, 2, 1]);
+const lly2 = fromArray([1, 2, 3, 4, 3, 2, 1]);
+
+// lly
+function isPalindrome(head: ListNode | null): boolean {
+  if (!head) {
+    return false
+  }
+  function sameValue(a: ListNode, b: ListNode) {
+    return a.val === b.val;
+  }
+  let candidate = null;
+  let current: ListNode | null = head;
+  while (current) {
+    if (!candidate) {
+      candidate = of(current.val);
+    } else {
+      candidate = addAtHeadU(candidate, current.val);
+    }
+    current = current.next;
+  }
+  current = head;
+  candidate = candidate;
+  while (current && candidate) {
+    if (!sameValue(current, candidate)) {
+      return false;
+    } else {
+      current = current.next;
+      candidate = candidate.next;
+    }
+  }
+  return true;
+}
+
+isPalindrome(lly) //?
+isPalindrome(lly2) //?
