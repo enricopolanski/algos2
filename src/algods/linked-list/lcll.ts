@@ -26,28 +26,23 @@ const getNextNode = (ll: ListNode) => ll.next;
 
 const getValue = (ll: ListNode) => ll.val;
 
-const getNthNode = (ll: ListNode, n: number) => {
+const getNthNode = (ll: ListNode, index: number) => {
+  if (index === 0) return ll;
   let i = 0;
-  let size = 0;
   let current: ListNode | null = ll;
-  while (i < n) {
-    size++;
+  while (i < index) {
     i++;
     if (!current) {
       return null;
     }
     if (hasNextNode(current)) {
       current = getNextNode(current);
-    } else {
-      if (n >= size) {
-        return null;
+      if (i === index) {
+        return current;
       }
     }
   }
-  if (n > i) {
-    return null;
-  }
-  return current;
+  return null;
 };
 
 const get = (ll: ListNode, int: number): number => {
@@ -218,6 +213,7 @@ assert.deepStrictEqual(toArray(fromArray([1, 2, 3, 4])), [1, 2, 3, 4]);
 assert.deepStrictEqual(fromArray([]), null);
 assert.deepStrictEqual(toArray(fromArray([])), []);
 assert.deepStrictEqual(clone(fromArray([1, 2, 3])), fromArray([1, 2, 3]));
+getNthNode(fromArray([1, 2, 3, 4])!, 0); //?
 assert.deepStrictEqual(
   getNthNode(fromArray([1, 2, 3, 4])!, 0),
   fromArray([1, 2, 3, 4])
@@ -293,7 +289,7 @@ const lly2 = fromArray([1, 2, 3, 4, 3, 2, 1]);
 // lly
 function isPalindrome(head: ListNode | null): boolean {
   if (!head) {
-    return false
+    return false;
   }
   function sameValue(a: ListNode, b: ListNode) {
     return a.val === b.val;
@@ -321,5 +317,5 @@ function isPalindrome(head: ListNode | null): boolean {
   return true;
 }
 
-isPalindrome(lly) //?
-isPalindrome(lly2) //?
+isPalindrome(lly); //?
+isPalindrome(lly2); //?
