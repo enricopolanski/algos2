@@ -14,7 +14,7 @@
  * carriage return, paragraph separator and many many others, and handling the rebroadcast
  * to stop at everything I had received up to that point.
  */
-import * as net from 'net';
+import * as net from "net";
 
 /**
  * In a chat application it would be nice to be able to differentiate users.
@@ -36,12 +36,12 @@ interface Connection {
 /**
  * Reference to the active connections. Mutable.
  */
-let connections: Array<Connection> = [];
+export let connections: Array<Connection> = [];
 
 /**
  * Sends a TCP `message` to all `connections`
  */
-const broadcast: (message: string) => void = (message) => {
+export const broadcast: (message: string) => void = (message) => {
   connections.forEach((connection) =>
     connection.socket.write(Buffer.from(message))
   );
@@ -56,8 +56,9 @@ const broadcastDisconnection: (userId: string) => void = (userId) =>
 /*
  * Note: Mutates a global variable.
  */
-const onDisconnect: (userId: string) => () => void = (userId) => () => {
+export const onDisconnect: (userId: string) => () => void = (userId) => () => {
   connections = connections.filter((connection) => connection.id !== userId);
+  console.log(connections);
   broadcastDisconnection(userId);
 };
 
@@ -74,9 +75,9 @@ const onData: (userId: string) => (buffer: Buffer) => void =
  * Unsafe: mutates the context.
  * @returns {string} the identifier
  */
-const setupConnection = (socket: net.Socket): string => {
+export const setupConnection = (socket: net.Socket): string => {
   // create a unique reference to the user
-  const userId = 'user-' + String(index);
+  const userId = "user-" + String(index);
 
   index++;
 
@@ -88,22 +89,22 @@ const setupConnection = (socket: net.Socket): string => {
 /**
  * The "core" of the application, executed every time the server receives a new connection.
  */
-const onConnection = (socket: net.Socket): void => {
+export const onConnection = (socket: net.Socket): void => {
   const userId = setupConnection(socket);
 
   broadcastConnection(userId);
 
   // Registration of event handlers for this socket
-  socket.on('end', onDisconnect(userId));
-  socket.on('data', onData(userId));
+  socket.on("end", onDisconnect(userId));
+  socket.on("data", onData(userId));
 };
 
 export const listen = () =>
   net
     .createServer(onConnection)
     .listen(10000, () => {
-      console.log('Chat App Server started.');
+      console.log("Chat App Server started.");
     })
-    .on('error', (err) => {
+    .on("error", (err) => {
       throw err;
     });
