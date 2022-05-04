@@ -1,4 +1,4 @@
-import { fromArray, toArray, of } from "./listnode";
+import { fromArray, toArray, of } from './listnode';
 
 const l1 = fromArray([2, 4, 3]);
 
@@ -93,8 +93,6 @@ function addTwoNumbers(
     }
   }
   if (overflow) {
-    console.log("in overflow");
-
     overflow = 0;
     if (tail) {
       tail.next = { val: 1, next: null };
