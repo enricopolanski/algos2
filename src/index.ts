@@ -14,7 +14,7 @@
  * carriage return, paragraph separator and many many others, and handling the rebroadcast
  * to stop at everything I had received up to that point.
  */
-import * as net from "net";
+import * as net from 'net';
 
 /**
  * In a chat application it would be nice to be able to differentiate users.
@@ -34,76 +34,107 @@ interface Connection {
 }
 
 /**
- * Reference to the active connections. Mutable.
- */
-let connections: Array<Connection> = [];
-
-/**
  * Sends a TCP `message` to all `connections`
  */
-const broadcast: (message: string) => void = (message) => {
-  connections.forEach((connection) =>
-    connection.socket.write(Buffer.from(message))
-  );
-};
+const broadcast: (message: string) => (connections: Connection[]) => void =
+  (message) => (connections) => {
+    connections.forEach((connection) =>
+      connection.socket.write(Buffer.from(message))
+    );
+  };
 
-const broadcastConnection: (userId: string) => void = (userId) =>
+const broadcastConnection: (
+  userId: string
+) => (connections: Connection[]) => void = (userId) =>
   broadcast(`${userId} has joined the chat.\n`);
 
-const broadcastDisconnection: (userId: string) => void = (userId) =>
-  broadcast(`${userId} has left the chat.`);
+const broadcastDisconnection: (
+  userId: string
+) => (connections: Connection[]) => void = (userId) => (connections) =>
+  broadcast(`${userId} has left the chat.`)(connections);
 
 /*
  * Note: Mutates a global variable.
  */
-const onDisconnect: (userId: string) => () => void = (userId) => () => {
-  connections = connections.filter((connection) => connection.id !== userId);
-  broadcastDisconnection(userId);
-};
+const onDisconnect: (
+  userId: string
+) => (connections: Connection[]) => () => void =
+  (userId) => (connections) => () => {
+    connections = connections.filter((connection) => connection.id !== userId);
+    broadcastDisconnection(userId)(connections);
+  };
 
 /**
  * Executed every time the listener receives data.
  * Sends a message to all the connections prepending the userId to the message.
  */
-const onData: (userId: string) => (buffer: Buffer) => void =
-  (userId) => (buffer) =>
-    broadcast(`${userId}: ${buffer.toString()}`);
+const onData: (
+  userId: string
+) => (connections: Connection[]) => (buffer: Buffer) => void =
+  (userId) => (connections) => (buffer) =>
+    broadcast(`${userId}: ${buffer.toString()}`)(connections);
 
-/**
- * Creates a new identifier for the user and pushes it to the connections.
- * Unsafe: mutates the context.
- * @returns {string} the identifier
- */
-const setupConnection = (socket: net.Socket): string => {
-  // create a unique reference to the user
-  const userId = "user-" + String(index);
+// /**
+//  * Creates a new identifier for the user and pushes it to the connections.
+//  * Unsafe: mutates the context.
+//  * @returns {string} the identifier
+//  */
+// const setupConnection = (socket: net.Socket): string => {
+//   // create a unique reference to the user
+//   const userId = 'user-' + String(index);
 
-  index++;
+//   index++;
 
-  connections.push({ socket: socket, id: userId });
+//   connections.push({ socket: socket, id: userId });
 
-  return userId;
-};
+//   return userId;
+// };
 
-/**
- * The "core" of the application, executed every time the server receives a new connection.
- */
-const onConnection = (socket: net.Socket): void => {
-  const userId = setupConnection(socket);
+// /**
+//  * The "core" of the application, executed every time the server receives a new connection.
+//  */
+// const onConnection = (socket: net.Socket): void => {
+//   const userId = setupConnection(socket);
 
-  broadcastConnection(userId);
+//   broadcastConnection(userId);
 
-  // Registration of event handlers for this socket
-  socket.on("end", onDisconnect(userId));
-  socket.on("data", onData(userId));
-};
+//   // Registration of event handlers for this socket
+//   socket.on('end', onDisconnect(userId));
+//   socket.on('data', onData(userId));
+// };
 
-const server = net.createServer(onConnection);
+// const server = net.createServer(onConnection);
 
-server.on("error", (err) => {
-  throw err;
-});
+export class ChatClient {
+  connections: Connection[];
+  server?: net.Server;
+  index: number;
+  constructor() {
+    this.connections = [];
+    this.index = 1;
+    this.onConnection = this.onConnection.bind(this);
+  }
 
-server.listen(10000, () => {
-  console.log("Chat App Server started.");
-});
+  launch(port: number): void {
+    this.server = net.createServer(this.onConnection);
+    this.server.listen(port, () => {
+      console.log('Chat App Server started.');
+    });
+    this.server.on('error', (err) => {
+      throw err;
+    });
+  }
+
+  addConnection(socket: net.Socket): string {
+    const userId = `user-${this.index++}`;
+    this.connections.push({ socket: socket, id: userId });
+    return userId;
+  }
+
+  onConnection(socket: net.Socket): void {
+    const userId = this.addConnection(socket);
+    socket.on('end', onDisconnect(userId)(this.connections));
+    socket.on('data', onData(userId)(this.connections));
+    broadcastConnection(userId)(this.connections);
+  }
+}
